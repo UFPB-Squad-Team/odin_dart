@@ -83,7 +83,7 @@ The API base URL and the spatial-API switch are compile-time `--dart-define`s
 
 | Define | Default | Description |
 |---|---|---|
-| `ODIN_API_BASE_URL` | `https://odin-backend-xdfx.onrender.com/api/v1` | Backend base URL |
+| `ODIN_API_BASE_URL` | `Render URL` | Backend base URL |
 | `ODIN_SPATIAL_API` | `false` | Ask the API for viewport-scoped, resolution-aware geometry (`?bbox=…&resolution=…`). Always safe to enable: if the backend answers with a 4xx, the repository downgrades itself for the rest of the session and falls back to whole-territory payloads. |
 
 ```bash
