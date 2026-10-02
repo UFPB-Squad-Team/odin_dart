@@ -104,6 +104,19 @@ final territoryViewProvider = Provider<TerritoryView>((ref) {
   );
 });
 
+/// The single "the map is working" signal the loading overlay binds to.
+///
+/// True while the camera is under a gesture (instant feedback) or while the
+/// current request is in flight and geometry is still on screen (refinement).
+///
+/// Deliberately excludes [TerritoryView.isLoading]: an empty map already gets
+/// its own centred placeholder in `observatorio_page.dart`, so the canvas never
+/// shows two indicators for the same wait.
+final mapBusyProvider = Provider<bool>((ref) {
+  if (ref.watch(viewportActivityProvider)) return true;
+  return ref.watch(territoryViewProvider).isRefining;
+});
+
 /// Features currently painted, used to derive the choropleth.
 final renderedFeaturesProvider = Provider<List<TerritoryFeature>>(
   (ref) => ref.watch(territoryViewProvider).features,

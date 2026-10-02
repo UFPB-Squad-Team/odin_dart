@@ -15,6 +15,7 @@ import '../../domain/territory_layer.dart';
 import '../observatorio_controller.dart';
 import 'basemap_layer.dart';
 import 'map_controller.dart';
+import 'map_loading_indicator.dart';
 import 'map_providers.dart';
 import 'map_state.dart';
 import 'school_layer.dart';
@@ -168,6 +169,9 @@ class _TerritoryMapState extends ConsumerState<TerritoryMap> {
         // The camera is the driver of the whole geospatial pipeline.
         onPositionChanged:
             ref.read(mapViewportProvider.notifier).onCameraChanged,
+        // Instant, gesture-level half of the visual feedback: flips on the
+        // first movement event, well before the settle debounce can fetch.
+        onMapEvent: ref.read(viewportActivityProvider.notifier).onMapEvent,
         onTap: (tapPosition, point) => _handleTap(point),
         onMapReady: () {
           _ready = true;
@@ -212,6 +216,10 @@ class _TerritoryMapState extends ConsumerState<TerritoryMap> {
             TextSourceAttribution('CARTO'),
           ],
         ),
+        // Non-blocking activity feedback. `FlutterMap` renders non-mobile
+        // children in a static stack, so this stays pinned to the canvas while
+        // the camera moves, and it ignores pointers so pan/zoom never stall.
+        const MapLoadingIndicator(),
       ],
     );
   }

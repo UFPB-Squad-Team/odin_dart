@@ -150,19 +150,6 @@ class ObservatorioPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                if (view.isRefining)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: SafeArea(
-                      bottom: false,
-                      child: LinearProgressIndicator(
-                        minHeight: 2,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
                 if (view.error != null && !view.isLoading)
                   Positioned.fill(
                     child: Center(

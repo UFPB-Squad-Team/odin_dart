@@ -91,6 +91,10 @@ class MapViewportController extends Notifier<MapViewportState> {
   void _settleNow() {
     _settle = null;
     if (_disposed) return;
+    // The camera is done, so nothing can still be moving. This doubles as the
+    // safety net for the activity signal below: a dropped end-event can never
+    // latch the loading overlay on forever.
+    ref.read(viewportActivityProvider.notifier).onCameraSettled();
     final candidate = MapQuery.fromViewport(state);
     if (candidate == state.query) return;
     state = state.copyWith(query: candidate);
@@ -101,6 +105,58 @@ class MapViewportController extends Notifier<MapViewportState> {
 final mapViewportProvider =
     NotifierProvider<MapViewportController, MapViewportState>(
   MapViewportController.new,
+);
+
+/// Whether the camera is being moved *right now*: drag, pinch, fling inertia,
+/// double-tap zoom or scroll wheel.
+///
+/// This is the instant half of the visual feedback. It flips on the first
+/// movement event, long before the settle debounce can publish a query and
+/// long before any request exists — while [TerritoryView.isRefining] (in
+/// `map_providers.dart`) covers the second half, once the fetch really starts.
+///
+/// Deliberately *not* a field of [MapViewportState]: that class's value equality
+/// is the network-scoping trigger asserted by `map_viewport_test.dart`, and an
+/// ephemeral UI flag must never take part in it.
+class ViewportActivityController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Bind to `MapOptions.onMapEvent`.
+  void onMapEvent(MapEvent event) {
+    switch (event) {
+      case MapEventMoveStart():
+      case MapEventFlingAnimationStart():
+      case MapEventDoubleTapZoomStart():
+      case MapEventScrollWheelZoom():
+        _set(true);
+      case MapEventMoveEnd():
+      case MapEventFlingAnimationEnd():
+      case MapEventFlingAnimationNotStarted():
+      case MapEventDoubleTapZoomEnd():
+        _set(false);
+      default:
+        break;
+    }
+  }
+
+  /// The camera settled. Whatever the event stream last reported, no movement
+  /// can still be in flight.
+  ///
+  /// Scroll-wheel zoom in particular emits a start with no end, so the settle
+  /// is the only reliable place that clears it.
+  void onCameraSettled() => _set(false);
+
+  void _set(bool value) {
+    if (state == value) return;
+    state = value;
+  }
+}
+
+/// The activity signal feeding the map's lightweight loading indicator.
+final viewportActivityProvider =
+    NotifierProvider<ViewportActivityController, bool>(
+  ViewportActivityController.new,
 );
 
 /// Current level of detail. Rebuilds only when a zoom threshold is crossed.
